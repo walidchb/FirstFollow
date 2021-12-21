@@ -1,0 +1,159 @@
+<!DOCTYPE html lang="en">
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>first-follow</title>
+        <meta name="description" content="Simple first and follow sets generator for context-free grammars">
+        <link rel="stylesheet" href="src/style.css">
+    </head>
+    <body>
+        <header>
+            <nav>
+                <h1>Get the FIRST and FOLLOW of a grammar </h1>
+            </nav>
+        </header>
+        
+        <div id="main">
+            <aside id="rules">
+                <div >
+                    <h2>Accepted input</h2>
+                    <ul>
+                     <li>Nonterminals should be separated from their derivations by -> or →, ex:
+                         <ul>
+                            <li>A -> B</li>
+                            <li>B → y</li>
+                        </ul>
+                    </li>
+                    <li>Multiple symbols should be separated by blank spaces, ex:
+                        <ul>
+                            <li>X → yOne yTwo y3</li>
+                            <li>yTwo → W thisIsConsideredAsingleSymbol</li>
+                            <li>W → those are considered five symbols</li>
+                        </ul>
+                    </li>
+                    <li>Each set of rules must be in a newline and must not break into a new
+                        line, or optionally multiple sets of rules can be placed at same line as long as all of them,
+                        with the exception of the last one, are terminated by a semicolon (;), ex:
+                        <ul>
+                            <li>A → y w B</li>
+                            <li>B → C y; C → w</li>
+                        </ul>
+                    </li>
+                    <li>
+                        Multiple derivations can be stated in the same line using the "|" separator:
+                        <ul>
+                            <li>A → w y | k | f</li>
+                        </ul>
+                    </li>
+                    <li>For Epsilon derivations use ε, ϵ or leave the derivation empty:
+                        <ul>
+                            <li>A → B | ε</li>
+                            <li>B → | K</li>
+                            <li>B → j | ϵ</li>
+                            <li>K →</li>
+                        </ul>
+                    </li>
+                </div>
+            </aside>
+
+            <div id="left">
+                <label id="YourGrammar" for="grammar">
+                    Your grammar :
+                </label> <br>
+                    <textarea id="grammar" rows="15" cols=60 placeholder="A -> k y x B B -> | k"></textarea>
+                <br>
+                <button id="run-grammar" type="button">Generate</button>
+
+                <div id="parse-error"></div>
+
+                <table id="first-table" style="visibility: hidden;">
+                    <caption>First </caption>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>First</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <table id="follow-table" style="visibility: hidden;" tabindex="-1">
+                    <caption>Follow </caption>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Follow</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+        <script src="src/main.js"></script>
+        <script>
+(function() {
+    'use strict';
+    var hasStorage = typeof localStorage !== 'undefined';
+    var parseError = document.getElementById('parse-error');
+    var textarea = document.getElementById('grammar');
+    var firstTable = document.getElementById('first-table');
+    var followTable = document.getElementById('follow-table');
+    var firstTbody = document.querySelector('#first-table tbody');
+    var followTbody = document.querySelector('#follow-table tbody');
+
+    document.getElementById('run-grammar').addEventListener('click', function() {
+        var grammar = textarea.value.trim();
+        try {
+            var data = firstFollow(grammar);
+        }
+        catch(e) {
+            firstTable.style.visibility = 'hidden';
+            followTable.style.visibility = 'hidden';
+            parseError.innerHTML = 'Error: ' + e;
+            return;
+        }
+
+        parseError.innerHTML = '';
+
+        var firstSet = data.firstSet;
+        var followSet = data.followSet;
+
+        var fContent = [];
+        var foContent = [];
+        for (var symbol in firstSet) {
+            var flist = Object.keys(firstSet[symbol]).map(function(s) {
+                return s === '' ? 'ε' : s;
+            });
+            fContent.push(
+                '<tr><td>' + symbol + '</td><td>{' + flist.join(', ') + '}</td></tr>'
+            );
+        }
+        for (var symbol in followSet) {
+            foContent.push(
+                '<tr><td>' + symbol + '</td><td>{' + Object.keys(followSet[symbol]).join(', ') + '}</td></tr>'
+            );
+        }
+
+        firstTbody.innerHTML = fContent.join('');
+        followTbody.innerHTML = foContent.join('');
+
+        firstTable.style.visibility = 'visible';
+        followTable.style.visibility = 'visible';
+        followTable.focus();
+
+        if (hasStorage) {
+            localStorage.setItem('data', grammar);
+        }
+    }, false);
+
+    if (hasStorage) {
+        var grammar = localStorage.getItem('data');
+        if (grammar) {
+            textarea.value = grammar;
+        }
+    }
+})();
+        </script>
+    </body>
+</html>
